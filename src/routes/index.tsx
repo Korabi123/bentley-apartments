@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -430,6 +430,30 @@ function Index() {
   // Track direction of last photo change per suite
   const [photoDir, setPhotoDir] = useState<Record<string, "next" | "prev">>({});
 
+  // Scroll-spy: track which section is currently in view
+  const [activeSection, setActiveSection] = useState<string>("");
+
+  useEffect(() => {
+    const sectionIds = ["about", "suites", "location", "amenities", "reviews", "book"];
+    const sections = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter(Boolean) as HTMLElement[];
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: "-40% 0px -55% 0px" },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
   const copyAddress = () => {
     navigator.clipboard.writeText(EXACT_ADDRESS);
     setCopied(true);
@@ -570,11 +594,25 @@ function Index() {
             </div>
           </div>
           <div className="hidden lg:flex items-center gap-8 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-            <a href="#about" className="hover:text-gold transition-colors">The Residence</a>
-            <a href="#suites" className="hover:text-gold transition-colors">Suites</a>
-            <a href="#location" className="hover:text-gold transition-colors">Location</a>
-            <a href="#amenities" className="hover:text-gold transition-colors">Amenities</a>
-            <a href="#reviews" className="hover:text-gold transition-colors">Google Reviews</a>
+            {[
+              { id: "about", label: "The Residence" },
+              { id: "suites", label: "Suites" },
+              { id: "location", label: "Location" },
+              { id: "amenities", label: "Amenities" },
+              { id: "reviews", label: "Google Reviews" },
+            ].map((link) => (
+              <a
+                key={link.id}
+                href={`#${link.id}`}
+                className={`transition-colors ${
+                  activeSection === link.id
+                    ? "text-gold"
+                    : "hover:text-gold"
+                }`}
+              >
+                {link.label}
+              </a>
+            ))}
           </div>
           <div className="flex items-center gap-3">
             <a
@@ -611,7 +649,7 @@ function Index() {
               className="font-display text-[18vw] md:text-[11vw] leading-[0.9] text-cream"
             >
               {titleWords.map((w, i) => (
-                <span key={i} className="inline-block overflow-hidden mr-[0.15em] pb-2">
+                <span key={i} className="inline-block overflow-hidden mr-[0.05em] pr-[0.1em] pb-[0.25em] -mb-[0.25em]">
                   <span data-w className="inline-block italic font-light">{w}</span>
                 </span>
               ))}
@@ -764,11 +802,10 @@ function Index() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`text-[10px] uppercase tracking-[0.25em] px-4 py-2.5 transition-all font-medium ${
-                    activeTab === tab.id
-                      ? "bg-gold text-ink"
-                      : "text-cream hover:text-gold"
-                  }`}
+                  className={`text-[10px] uppercase tracking-[0.25em] px-4 py-2.5 transition-all font-medium ${activeTab === tab.id
+                    ? "bg-gold text-ink"
+                    : "text-cream hover:text-gold"
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -794,9 +831,8 @@ function Index() {
                     <div className="relative aspect-[16/10] overflow-hidden grain border border-border/50 group">
                       <div
                         key={currentPhoto.url}
-                        className={`absolute inset-0 w-full h-full ${
-                          photoDir[suite.id] === "prev" ? "animate-slide-from-left" : "animate-slide-from-right"
-                        }`}
+                        className={`absolute inset-0 w-full h-full ${photoDir[suite.id] === "prev" ? "animate-slide-from-left" : "animate-slide-from-right"
+                          }`}
                       >
                         <img
                           src={currentPhoto.url}
@@ -846,11 +882,10 @@ function Index() {
                         <button
                           key={p.title}
                           onClick={() => setSuitePhoto(suite.id, idx)}
-                          className={`relative aspect-[16/10] overflow-hidden border transition-all ${
-                            currentPhotoIdx === idx
-                              ? "border-gold ring-2 ring-gold/40 scale-[1.02]"
-                              : "border-border/50 opacity-60 hover:opacity-100"
-                          }`}
+                          className={`relative aspect-[16/10] overflow-hidden border transition-all ${currentPhotoIdx === idx
+                            ? "border-gold ring-2 ring-gold/40 scale-[1.02]"
+                            : "border-border/50 opacity-60 hover:opacity-100"
+                            }`}
                         >
                           <img src={p.url} alt={p.title} className="w-full h-full object-cover" />
                         </button>
